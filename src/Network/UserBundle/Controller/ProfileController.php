@@ -17,6 +17,7 @@ use Network\UserBundle\Form\Type\ContactInfoType;
 use Network\StoreBundle\DBAL\RelationshipStatusEnumType;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 class ProfileController extends BaseController
 {
@@ -123,6 +124,50 @@ class ProfileController extends BaseController
         return $this->render('FOSUserBundle:Profile:contact.html.twig', [
             'form' =>  $formContact->createView()
         ]);
+    }
+
+    public function editPostAction(Request $request)
+    {
+        $result = [];
+        try {
+            $post = $this->get('network.store.im_service')
+                    ->editPost(json_decode($request->getContent(), true));
+            $result['msg'] = $post->getText();
+            $result['status'] = 'ok';
+            $result['topic'] = $post->getThread()->getTopic();
+            $result['thread_id'] = $post->getThread()->getId();
+            $result['post_id'] = $post->getId();
+        } catch (Exception $e) {
+            $result['error'] = $e->getMessage();
+        }
+
+        return new JsonResponse($result);
+    }
+    
+    public function deletePostAction(Request $request)
+    {
+       $result = [];
+        try {
+            $result = $this->get('network.store.im_service')
+                    ->deletePost(json_decode($request->getContent(), true));
+        } catch (Exception $e) {
+            $result['error'] = $e->getMessage();
+        }
+        return new JsonResponse($result);
+    }
+
+    public function previewPostAction(Request $request)
+    {
+        $result = [];
+        try {
+            $result['text'] = $this->get('network.store.im_service')
+                    ->previewPost(json_decode($request->getContent(), true), 
+                            $this->container->get('sonata.formatter.pool'));
+        } catch (Exception $e) {
+            $result['error'] = $e->getMessage();
+        }
+
+        return new JsonResponse($result);
     }
 
     public function showProfileAlbumsAction()

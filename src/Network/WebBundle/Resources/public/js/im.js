@@ -117,6 +117,10 @@ function updateThreadList() {
     closeActions();
 }
 
+function update(data) {
+    updateThreadView(data.threadId, data.topic, true);
+}
+
 function updateThreadView(threadId, topic, scroll) {
     // Currently reloads all posts from thread
     setTab(threadId, topic);
@@ -133,7 +137,7 @@ function updateThreadView(threadId, topic, scroll) {
     var diff_less_than = function (date1, date2, min){
         return date1 - date2 < min * 60 * 1000;
     };
-    var new_post = function(post, tsString, with_header, unread){
+    var new_post = function(post, tsString, with_header, unread, selfId){
         var postDiv = $('#post').clone();
         if (with_header) {
             var postHeader = postDiv.find('#post-header');
@@ -146,6 +150,9 @@ function updateThreadView(threadId, topic, scroll) {
         if (unread)
             postDiv.addClass('unread-post');
         var postBody = postDiv.find('#post-body');
+        if(post.userId == selfId) {
+            AddEdit(postBody, postDiv, update, post.id, post.text_bd, true);
+        }
         postBody.html(post.text);
         postBody.show();
         postDiv.show();
@@ -181,7 +188,7 @@ function updateThreadView(threadId, topic, scroll) {
                 tsString = ts.toLocaleDateString();
             }
             var with_header = lastAuthor !== post.userId || !diff_less_than(ts, lastDate, 1);
-            postsBlock.append(new_post(post, tsString, with_header, unread));
+            postsBlock.append(new_post(post, tsString, with_header, unread, selfId));
             lastAuthor = post.userId;
             lastDate = ts;
         }
@@ -411,6 +418,7 @@ function InitIM(partnerId, partnerName) {
             topic: $('#conference-topic').val()
         }).then(function (data) {
             $('#post-text').val('');
+            $('#edit-text').html('');
             if (recipientIds.length > 1)
                 conferences[data.threadId] = true;
             updateThreadView(data.threadId, data.topic, true);
@@ -434,3 +442,29 @@ function InitIM(partnerId, partnerName) {
         $('#recipient').select2('data', {id: partnerId, text: partnerName});
     }
 }
+
+$(document).ready(function() {
+    $('#tabs_preview').each(function() {
+        $(this).find('li').each(function(i) {
+            $(this).click(function() {
+                $(this).addClass('active').siblings().removeClass('active');
+                var p = $(this).parents('div.tabs_container');
+                if (i == 1) {
+                    var preview = $('#edit-text');
+                    preview.html('');
+                    xhr('preview_posts', {
+                        text: $("#post-text").val()
+                    }).then(function (data) {
+                        if(data.error){
+                            console.log(data.error);
+                            return;
+                        }
+                        preview.html(data.text);
+                    });
+                }
+                p.find('div.tab_container').hide();
+                p.find('div.tab_container:eq(' + i + ')').show();
+            });
+        });
+    });
+});

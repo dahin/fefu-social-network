@@ -207,5 +207,45 @@ class ImService
 
         return new JsonResponse(['count' => $count]);
     }
+    
+    public function editPost($data)
+    {
+        if (empty($data) || !array_key_exists('text', $data) || empty(trim($data['text']))) 
+                throw new Exception('field \'text\' is empty');
+        if (empty($data['post_id'])) throw new Exception('field \'postId\' is not numeric');
+        $post = $this->em->getRepository('NetworkStoreBundle:Post')->find($data['post_id']);
+        if (empty($post)) {
+            throw new AccessDeniedException('This user does not have access to this section.');
+        }
+ 
+        $post->setText($data['text']);
+        $this->persistAndFlush($post);
+        
+        return $post;
+    }
+    
+    public function deletePost($data)
+    {
+        if (empty($data) || empty($data['post_id'])) 
+            throw new Exception('field \'postId\' is not numeric');
+        $post = $this->em->getRepository('NetworkStoreBundle:Post')->find($data['post_id']);
+        if (empty($post)) {
+            throw new AccessDeniedException('This user does not have access to this section.');
+        }
+        $threadId = $post->getThread()->getId();
+        $this->em->remove($post);
+        $this->em->flush();
+        
+        return ['threadId' => $threadId, 'topic' => $threadId->getTopic()];
+    }
+    
+    public function previewPost($data, $formatter)
+    {
+        if (empty($data)) 
+                throw new Exception('field \'text\' is empty');
+        $text = $data['text'];
+        
+        return  $formatter->transform('markdown', $text);
+    }
 
 }

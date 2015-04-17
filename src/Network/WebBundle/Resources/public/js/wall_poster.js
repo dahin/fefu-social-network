@@ -13,8 +13,8 @@ function createPost(user_id, thread_id, post_id, username, msg, ts, is_poll)
 
     var usernameContainer = $('<div class="username"></div>');
     var tsContainer = $('<div class="timestamp"></div>');
-    var msgContainer = $('<div id="msg" class="msg"></div>');
-    var controlsContainer = $('<div class="controls"></div>');
+    var msgContainer = $('<div id="'+ post_id + '" class="msg"></div>');
+    var controlsContainer = $('<div class="controls"></div>').append('<br>');
     var commentsContainer = $('<div class="comments"></div>');
     var commentContainer = $('<div class="to_comment"><form><textarea class="comment_text"></textarea>' +
     '<button class="comment_btn" id="comment_' + thread_id + '">Comment!</button></form></div>');
@@ -24,12 +24,6 @@ function createPost(user_id, thread_id, post_id, username, msg, ts, is_poll)
     ));
 
     tsContainer.text(ts);
-
-    if (user_id === userId) {
-        controlsContainer.append($(
-            '<a href="' + post_id + '" class="edit_control">Edit</a>'
-        ));
-    }
 
     if (user_id === userId || userId === objectId) {
         controlsContainer.append($(
@@ -63,6 +57,10 @@ function addPost(user_id, thread_id, post_id, username, msg, ts, is_poll)
 {
     $('#posts').prepend(createPost(user_id, thread_id, post_id, username, msg, ts, is_poll));
     postLike(post_id);
+    if (user_id === userId) {
+        EditButton (thread_id, post_id, msg);
+    }
+
 }
 
 function createComment(user_id, thread_id, post_id, username, msg, ts)
@@ -71,7 +69,7 @@ function createComment(user_id, thread_id, post_id, username, msg, ts)
     var usernameContainer = $('<div class="username"></div>');
     var tsContainer = $('<div class="timestamp"></div>');
     var controlsContainer = $('<div class="controls"></div>');
-    var msgContainer = $('<div class="msg"></div>');
+    var msgContainer = $('<div id="'+ post_id + '" class="msg"></div>');
 
     usernameContainer.append($(
         '<a href="' + Routing.generate('user_profile', {id: user_id}) + '">' + username + '</a>'
@@ -103,12 +101,20 @@ function addComment(user_id, thread_id, post_id, username, msg, ts)
 
     commentsContainer.append(createComment(user_id, thread_id, post_id, username, msg, ts));
     postLike(post_id);
+    if (user_id === userId) {
+        EditButton (thread_id, post_id, msg);
+    }
 
 }
 
-function createEditInterface(e)
+function createEditInterface(data)
 {
-    // place for dahin's code
+    if (data['status'] === 'ok') {
+        var msg = data['msg'];
+        var msgContainer = $('#' + data['post_id']);
+        EditButton (data['thread_id'], data['post_id'], msg);
+        msgContainer.text(msg); 
+    }
 }
 
 function diff_less_than(date1, date2, min){
@@ -168,7 +174,6 @@ function handleDeleteResponse(data, textStatus, jqXHR)
             .remove();
     }
 }
-
 
 function handleLoadPostsResponse(data, textStatus, jqXHR)
 {
@@ -390,13 +395,20 @@ function clickForm(data)
     }
 }
 
+function EditButton (post, post_id, msg) {
+    var wall =$('#wall');
+    var postEdit = wall.find('#post_edit').clone();
+    postEdit.show();
+    var msgContainer = $('#thread_' + post).find('.msg');
+    AddEdit(msgContainer, postEdit, createEditInterface, post_id, msg, false);
+    msgContainer.append(postEdit);
+}
+
 $(document).on('ready', function () {
     $('#poll_form').hide();
     postsCount = $('.post').length;
 
     var wallContainer = $('#posts');
-
-    wallContainer.on('click', 'a.edit_control', createEditInterface);
 
     wallContainer.on('click', 'a.delete_control', function (e) {
         e.preventDefault();

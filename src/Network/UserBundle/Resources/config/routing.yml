@@ -70,6 +70,14 @@ user_profile_show_messages:
 post:
     path: /post
     defaults: { _controller: NetworkUserBundle:Thread:post }
+    
+edit_post:
+    path: /post_edit
+    defaults: { _controller: NetworkUserBundle:Profile:editPost }
+    
+delete_post:
+    path: /post_delete
+    defaults: { _controller: NetworkUserBundle:Profile:deletePost }
 
 threads:
     path: /thread_list
@@ -238,3 +246,6 @@ get_users_in_thread:
 leave_conference:
     path: /thread/leave
     defaults: { _controller: NetworkUserBundle:Thread:leaveConference }
+preview_posts:
+    path: /preview_posts
+    defaults: { _controller: NetworkUserBundle:Profile:previewPost }
